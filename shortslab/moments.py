@@ -12,6 +12,7 @@ Inputs (JSON):
   transcript: [{"start", "end", "text", "words": [...]}]
   chat:       [{"t": seconds on VOD time, "text": "..."}]
   game:       [{"t": seconds on VOD time, "kind": "fight" | "comeback" | "blunder" | "end", "weight"?: float, "tag"?: "..."}]
+              (weight 0 only tags the moment, e.g. a sub or a raid)
 
   python -m shortslab.moments transcript.json --chat chat.json --game game.json --top 30
 """
@@ -47,7 +48,9 @@ class Moment:
 
 
 def rank(transcript: list[dict], chat: list[dict] = (), game: list[dict] = (), top: int = 40,
-         step: int = 5, window: int = 30) -> list[Moment]:
+         step: int = 5, window: int = 30, hot: dict[str, float] | None = None) -> list[Moment]:
+    """The best non-overlapping windows, best first. hot: phrase regex -> weight (default HOT)."""
+    hot = HOT if hot is None else hot
     end = int(transcript[-1]["end"]) + window if transcript else window
     n = end // step + 1
     me, ch, gm = [0.0] * n, [0.0] * n, [0.0] * n
@@ -58,7 +61,7 @@ def rank(transcript: list[dict], chat: list[dict] = (), game: list[dict] = (), t
 
     for s in transcript:
         x = s["text"].lower()
-        sc = sum(w * len(re.findall(p, x)) for p, w in HOT.items())
+        sc = sum(w * len(re.findall(p, x)) for p, w in hot.items())
         if len(s.get("words", [])) / max(0.5, s["end"] - s["start"]) > 3.6:
             sc += 1  # fast, excited talk
         if "!" in s["text"]:

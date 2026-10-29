@@ -35,6 +35,15 @@ class MomentsTest(unittest.TestCase):
         top = rank(self.tr, chat, top=1)
         self.assertLess(top[0].start, 900)  # chat lags the moment by 3-25 s
 
+    def test_custom_phrases_and_tag_only_events(self):
+        tr = list(self.tr)
+        tr[60] = seg(300, "what a read that was")
+        game = [{"t": 900, "kind": "raid", "weight": 0, "tag": "raid:someone"}]
+        top = rank(tr, game=game, top=20, hot={r"\bwhat a read\b": 3})
+        self.assertTrue(top[0].start <= 300 <= top[0].end, top[0])
+        self.assertEqual(top[0].game, 0)
+        self.assertTrue(any("raid:someone" in m.tags and m.game == 0 for m in top))
+
 
 class BurstsTest(unittest.TestCase):
     def test_densest_first_and_spaced(self):
@@ -50,6 +59,7 @@ class BurstsTest(unittest.TestCase):
         self.assertEqual(unit_name("SiegeTankSieged"), "Siege Tank")
         self.assertEqual(unit_name("BattleHellion"), "Hellbat")
         self.assertEqual(unit_name("Battlecruiser"), "Battlecruiser")
+        self.assertEqual(unit_name("PlanetaryFortress"), "Planetary Fortress")
 
 
 if __name__ == "__main__":

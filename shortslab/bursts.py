@@ -14,7 +14,7 @@ import json
 LPS = 22.4  # game loops per second at Faster speed
 MODES = {"HellionTank": "Hellbat", "BattleHellion": "Hellbat", "SiegeTankSieged": "Siege Tank", "SiegeTank": "Siege Tank",
          "ThorAP": "Thor", "LiberatorAG": "Liberator", "WidowMineBurrowed": "Widow Mine", "CycloneLockOn": "Cyclone",
-         "VikingFighter": "Viking", "VikingAssault": "Viking"}
+         "VikingFighter": "Viking", "VikingAssault": "Viking", "PlanetaryFortress": "Planetary Fortress"}
 NOT_KILLS = ("Larva", "Egg", "Broodling", "Interceptor", "Locust", "Creep", "Changeling")
 WORKERS = ("SCV", "Probe", "Drone")
 
@@ -25,7 +25,8 @@ def unit_name(name: str) -> str:
 
 def densest(kills: list[tuple[float, bool, bool]], window: float = 4.0, min_kills: int = 4,
             spacing: float = 6.0) -> list[dict]:
-    """kills: (game second, was a worker, was a building). The densest windows, densest first."""
+    """kills: (game second, was a worker, was a building). The densest windows, densest first.
+    Each has its start t in game seconds (unrounded, for mapping onto a VOD) and its m:ss clock."""
     ks = sorted(kills)
     best = []
     for t, _, _ in ks:
@@ -37,15 +38,18 @@ def densest(kills: list[tuple[float, bool, bool]], window: float = 4.0, min_kill
         if n < min_kills or any(abs(t - u) < spacing for u in used):
             continue
         used.append(t)
-        out.append({"n": n, "t": round(t, 1), "workers": workers, "buildings": buildings,
+        out.append({"n": n, "t": t, "workers": workers, "buildings": buildings,
                     "clock": f"{int(t // 60)}:{int(t % 60):02d}"})
     return out
 
 
-def kills_by_unit(replay, player_name: str, units: set[str]) -> dict[str, list[tuple[float, bool, bool]]]:
-    me = next((p for p in replay.players if p.name == player_name), None)
-    if me is None:
-        raise SystemExit(f"no player {player_name!r} in {replay.filename}; players: {', '.join(p.name for p in replay.players)}")
+def kills_by_unit(replay, player, units: set[str]) -> dict[str, list[tuple[float, bool, bool]]]:
+    """Kills by each of player's units (a name, or one of replay.players), keyed by folded unit name."""
+    me = player
+    if isinstance(player, str):
+        me = next((p for p in replay.players if p.name == player), None)
+        if me is None:
+            raise SystemExit(f"no player {player!r} in {replay.filename}; players: {', '.join(p.name for p in replay.players)}")
     out: dict[str, list[tuple[float, bool, bool]]] = {}
     for e in replay.tracker_events:
         if type(e).__name__ != "UnitDiedEvent" or e.unit is None or e.unit.owner is None or e.unit.owner is me:
@@ -77,6 +81,7 @@ def main() -> None:
             for b in densest(ks):
                 if a.vod0 is not None:
                     b["vod"] = round(a.vod0 + a.rate * b["t"], 1)
+                b["t"] = round(b["t"], 1)
                 print(json.dumps({"replay": path, "unit": unit, **b}))
 
 
