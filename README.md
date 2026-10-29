@@ -12,8 +12,8 @@ The shorts: [youtube.com/nathanias](https://www.youtube.com/nathanias)
 | | |
 |---|---|
 | Shorts made | 550 (475 staged in the engine, 75 cut from stream VODs) |
-| Fights fought to calibrate | 2,306 across 100 matchups |
-| Stream days processed | 9, with 93 games pinned to the VOD by clock sync |
+| Fights fought in the engine | 2,306 (2,010 to calibrate 172 matchups, 296 filmed takes) |
+| Stream days cut into shorts | 6, with 93 games pinned to the VOD by clock sync |
 | Fights per calibrated matchup | 6 (median) |
 | Stream short render | ~15 s each on CPU |
 
@@ -35,7 +35,8 @@ flowchart LR
   title is only interesting if you can't call it, so each matchup's count is
   searched in the engine: grow or halve to bracket the edge, bisect, then
   confirm at the edge and one below: six fights per matchup (median). Every fight
-  goes to an append-only store, so reruns and upgrades start from evidence.
+  goes to an append-only store, and each filming batch takes its counts from
+  the store: whichever count ended closest.
   At the chosen count the winner typically ends with about a quarter of its HP.
 - **Two passes for picture and sound.** SC2 only makes sound in real time, so
   a live pass records the game audio through a PipeWire null sink (a guard
@@ -61,7 +62,9 @@ flowchart LR
   of a stream from three signals on VOD time: my reactions in the transcript,
   chat 3-25 s later (viewer latency) and replay events like big fights and
   comebacks. Each signal is normalised to its own 95th percentile, and the
-  best non-overlapping 30 s windows go to the editor.
+  best non-overlapping 30 s windows go to the editor. That was the first pass on
+  the early streams; later ones start from the stream's live captions, chat and
+  the replays' in-game chat.
 - **Clock sync** ([`clocksync.py`](shortslab/clocksync.py)). A replay's save
   time places a game within ~10 s, and the game clock drifts against the VOD
   (rate ~0.98, about a second a minute). So the on-screen clock is read with
@@ -70,10 +73,11 @@ flowchart LR
 - **Kill bursts** ([`bursts.py`](shortslab/bursts.py)) find each unit's
   densest 4 s of kills in the replays, mapped onto the VOD through that line:
   the money shots for 30 s unit cuts.
-- **The edit** is done by an LLM working from the ranked moments and the
+- **The edit** is done by an LLM working from those signals and the
   timed words, then reviewed on my phone. Rendering is ffmpeg: captions one
-  to three words at a time, chat messages drawn as cards, and every section's
-  start checked by audio cross-correlation.
+  to three words at a time and chat messages drawn as cards. A section
+  downloaded on its own is lined up with the full audio track by
+  cross-correlation, so cuts land on the words.
 
 ## Run it
 
