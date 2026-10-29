@@ -3,7 +3,9 @@
 How I make StarCraft II YouTube Shorts on a home server, two ways: fights
 staged in the real game engine and tuned until they're a coin flip, and
 highlights cut from my own stream VODs. This repo is a write-up of both
-pipelines plus four pieces of them as working code.
+pipelines plus four pieces of them as working code. They aren't copies:
+production imports this package and keeps only its own glue (paths, data
+sources, tuning), so an improvement lands here first.
 
 The shorts: [youtube.com/nathanias](https://www.youtube.com/nathanias)
 
