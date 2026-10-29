@@ -3,7 +3,7 @@
 How I make StarCraft II YouTube Shorts on a home server, two ways: fights
 staged in the real game engine and tuned until they're a coin flip, and
 highlights cut from my own stream VODs. This repo is a write-up of both
-pipelines plus four pieces of them as working code. They aren't copies:
+pipelines plus six pieces of them as working code. They aren't copies:
 production imports this package and keeps only its own glue (paths, data
 sources, tuning), so an improvement lands here first.
 
@@ -75,23 +75,31 @@ flowchart LR
 - **Kill bursts** ([`bursts.py`](shortslab/bursts.py)) find each unit's
   densest 4 s of kills in the replays, mapped onto the VOD through that line:
   the money shots for 30 s unit cuts.
+- **Fight detection** ([`fights.py`](shortslab/fights.py)) turns a replay
+  into the beats a gameplay edit is cut from: deaths clustered into fights
+  wherever the gap is under 7 s, each with its peak second and the units that
+  did the killing, hero runs (one unit's 6+ kills inside 20 s), and the army
+  lead with its low point.
 - **The edit** is done by an LLM working from those signals and the
   timed words, then reviewed on my phone. Rendering is ffmpeg: captions one
   to three words at a time and chat messages drawn as cards. A section
   downloaded on its own is lined up with the full audio track by
-  cross-correlation, so cuts land on the words.
+  cross-correlation ([`align.py`](shortslab/align.py)), so cuts land on the
+  words.
 
 ## Run it
 
 ```bash
-pip install -e .                    # sc2reader too for bursts: pip install -e .[replays]
+pip install -e .                    # sc2reader for bursts and fights: .[replays]; numpy for align: .[audio]
 python examples/lanchester.py       # the calibration search against a toy fight model
 python -m unittest discover -s tests -t .
 python -m shortslab.clocksync vod.mp4 3100 336 --crop "crop=110:34:487:480,negate,format=gray"
 python -m shortslab.bursts game.SC2Replay --player Name --units "Battlecruiser,Thor"
+python -m shortslab.fights game.SC2Replay --player Name
+python -m shortslab.align section.mp4 audio.m4a 1335
 ```
 
-`clocksync` needs ffmpeg and tesseract on the path.
+`clocksync` and `align` need ffmpeg on the path, and `clocksync` tesseract too.
 
 ## Not in this repo
 
