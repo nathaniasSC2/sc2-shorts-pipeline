@@ -1,0 +1,17 @@
+[project]
+name = "shortslab"
+version = "0.1.0"
+description = "Pieces of a pipeline that makes StarCraft II shorts: knife-edge fight calibration, VOD clock sync, moment ranking, kill bursts"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.optional-dependencies]
+replays = ["sc2reader>=1.8"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["shortslab"]
