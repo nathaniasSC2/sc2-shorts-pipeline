@@ -5,6 +5,8 @@ staged in the real game engine and tuned until they're a coin flip, and
 highlights cut from my own stream VODs. This repo is a write-up of both
 pipelines plus four pieces of them as working code.
 
+The shorts: [youtube.com/nathanias](https://www.youtube.com/nathanias)
+
 ## In production
 
 | | |
